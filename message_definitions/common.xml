@@ -2763,6 +2763,19 @@
       <field type="uint16_t" name="servo15_raw" units="us">Servo output 15 value, in microseconds</field>
       <field type="uint16_t" name="servo16_raw" units="us">Servo output 16 value, in microseconds</field>
     </message>
+    <message id="220" name="CHARGING_MAV_INFO">
+      <description>custom mavlink message for i2c charging monitoring chip</description>
+      <field type="float" name="AvgVCell_V" units="V">average cell voltage (V)</field>
+      <field type="float" name="AvgCell3_V" units="V">cell 3 voltage (V)</field>
+      <field type="float" name="AvgCell2_V" units="V">cell 2 voltage (V)</field>
+      <field type="float" name="AvgCell1_V" units="V">cell 1 voltage (V)</field>
+      <field type="float" name="RepCap_mAh" units="mAh">reported capacity (mAh)</field>
+      <field type="float" name="Current_mA" units="mA">current (mA)</field>
+      <field type="float" name="AvgCurrent_mA" units="mA">average current (mA)</field>
+      <field type="float" name="TTE_hr" units="hr">time to empty (hr)</field>
+      <field type="float" name="TTF_hr" units="hr">time to full (hr)</field>
+      <field type="float" name="RepSOC_Pourcent" units="%">reported state of charge (%)</field>
+    </message>
     <message id="37" name="MISSION_REQUEST_PARTIAL_LIST">
       <description>Request a partial list of mission items from the system/component. http://qgroundcontrol.org/mavlink/waypoint_protocol. If start and end index are the same, just send one waypoint.</description>
       <field type="uint8_t" name="target_system">System ID</field>
