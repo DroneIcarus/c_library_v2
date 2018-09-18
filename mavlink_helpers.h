@@ -534,7 +534,7 @@ MAVLINK_HELPER uint8_t mavlink_expected_message_length(const mavlink_message_t *
  * parser in a library that doesn't use any global variables
  *
  * @param rxmsg    parsing message buffer
- * @param status   parsing starus buffer 
+ * @param status   parsing status buffer
  * @param c        The char to parse
  *
  * @param returnMsg NULL if no message could be decoded, the message data else
@@ -677,7 +677,11 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 		rxmsg->msgid = c;
 		mavlink_update_checksum(rxmsg, c);
                 if (status->flags & MAVLINK_STATUS_FLAG_IN_MAVLINK1) {
-                    status->parse_state = MAVLINK_PARSE_STATE_GOT_MSGID3;
+                    if(rxmsg->len > 0){
+                        status->parse_state = MAVLINK_PARSE_STATE_GOT_MSGID3;
+                    } else {
+                        status->parse_state = MAVLINK_PARSE_STATE_GOT_PAYLOAD;
+                    }
 #ifdef MAVLINK_CHECK_MESSAGE_LENGTH
                     if (rxmsg->len != MAVLINK_MESSAGE_LENGTH(rxmsg->msgid))
                     {
@@ -698,9 +702,13 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 		break;
 
 	case MAVLINK_PARSE_STATE_GOT_MSGID2:
-		rxmsg->msgid |= c<<16;
+		rxmsg->msgid |= ((uint32_t)c)<<16;
 		mavlink_update_checksum(rxmsg, c);
-		status->parse_state = MAVLINK_PARSE_STATE_GOT_MSGID3;
+		if(rxmsg->len > 0){
+			status->parse_state = MAVLINK_PARSE_STATE_GOT_MSGID3;
+		} else {
+			status->parse_state = MAVLINK_PARSE_STATE_GOT_PAYLOAD;
+		}
 #ifdef MAVLINK_CHECK_MESSAGE_LENGTH
 	        if (rxmsg->len != MAVLINK_MESSAGE_LENGTH(rxmsg->msgid))
 		{
@@ -811,14 +819,18 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 		status->packet_rx_success_count++;
 	}
 
-	r_message->len = rxmsg->len; // Provide visibility on how far we are into current msg
-	r_mavlink_status->parse_state = status->parse_state;
-	r_mavlink_status->packet_idx = status->packet_idx;
-	r_mavlink_status->current_rx_seq = status->current_rx_seq+1;
-	r_mavlink_status->packet_rx_success_count = status->packet_rx_success_count;
-	r_mavlink_status->packet_rx_drop_count = status->parse_error;
-	r_mavlink_status->flags = status->flags;
-	status->parse_error = 0;
+       if (NULL != r_message) {
+           r_message->len = rxmsg->len; // Provide visibility on how far we are into current msg
+       }
+       if (NULL != r_mavlink_status) {	
+           r_mavlink_status->parse_state = status->parse_state;
+           r_mavlink_status->packet_idx = status->packet_idx;
+           r_mavlink_status->current_rx_seq = status->current_rx_seq+1;
+           r_mavlink_status->packet_rx_success_count = status->packet_rx_success_count;
+           r_mavlink_status->packet_rx_drop_count = status->parse_error;
+           r_mavlink_status->flags = status->flags;
+       }
+       status->parse_error = 0;
 
 	if (status->msg_received == MAVLINK_FRAMING_BAD_CRC) {
 		/*
@@ -828,7 +840,9 @@ MAVLINK_HELPER uint8_t mavlink_frame_char_buffer(mavlink_message_t* rxmsg,
 		  mavlink_msg_to_send_buffer() won't overwrite the
 		  checksum
 		 */
-		r_message->checksum = rxmsg->ck[0] | (rxmsg->ck[1]<<8);
+            if (NULL != r_message) {
+                r_message->checksum = rxmsg->ck[0] | (rxmsg->ck[1]<<8);
+            }
 	}
 
 	return status->msg_received;
